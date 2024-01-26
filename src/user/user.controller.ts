@@ -2,41 +2,12 @@ import { Request, Response } from "express"
 import { UnitUser } from "./user.interface"
 import { StatusCodes } from "http-status-codes"
 
+import { User, Address } from '../models/User.model'
 import UserRepository from "./user.repository"
+
 
 class UserController {
 
-
-    static findAll = async (req: Request, res: Response) => {
-
-        try {
-            const alllUsers: UnitUser[] = await UserRepository.findAll()
-            console.log("ahasdfasdf:"+alllUsers)
-            if (!alllUsers) {
-                console.log("asd")
-                return res.status(StatusCodes.NOT_FOUND).json({ msg: `No Users at this time.` })
-            }
-
-            return res.status(StatusCodes.OK).json({ total_user: alllUsers.length, alllUsers })
-        } catch (error) {
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error })
-        }
-    }
-
-    static findOne = async (req: Request, res: Response) => {
-
-        try {
-            const user: UnitUser = await UserRepository.findOne(req.params.di)
-
-            if (!user) {
-                return res.status(StatusCodes.NOT_FOUND).json({ error: `User nof found` })
-            }
-
-            return res.status(StatusCodes.OK).json({ user })
-        } catch (error) {
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error })
-        }
-    }
 
     static register = async (req: Request, res: Response) => {
         try {
@@ -46,7 +17,7 @@ class UserController {
                 return res.status(StatusCodes.BAD_REQUEST).json({ error: `Please provide all the required parameters...` })
             }
 
-            const newUser = await UserRepository.create(req.body)
+            const newUser = User.create({ username: username, email: email, userpassword: password });
 
             return res.status(StatusCodes.CREATED).json({ newUser })
         } catch (error) {
@@ -54,74 +25,79 @@ class UserController {
         }
     }
 
-    static login = async (req: Request, res: Response) => {
+    static assignUserToAddress = async (req: Request, res: Response) => {
 
         try {
-            const { email, password } = req.body
+            const { user_id, address_id } = req.body
+        } catch (error) {
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error })
+        }
+    }
+    static findAll = async (req: Request, res: Response) => {
 
-            if (!email || !password) {
+        try {
+            const alllUsers = await User.findAll({ attributes: ['id', 'username', 'email'] })
+
+            if (!alllUsers) {
+                return res.status(StatusCodes.NOT_FOUND).json({ msg: `No Users at this time.` })
+            }
+
+            return res.status(StatusCodes.OK).json({ total_user: alllUsers.length, alllUsers })
+        } catch (error) {
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error })
+        }
+    }
+
+
+    static update = async (req: Request, res: Response) => {
+
+        try {
+            const {email, postcode}  = req.body
+        
+
+            const address = await Address.findOne({ where: { postcode: postcode } })
+            const user = await User.findOne({ where: { email: email }, attributes: ['id', 'username', 'email'] })
+            address.familymembers.push(user);
+            user.address = address;
+            await user.save();
+            await address.save();
+            return res.status(StatusCodes.OK).json({ msg: 'user updated' })
+
+        } catch (error) {
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error })
+        }
+
+    }
+    static findAllAddress = async (req: Request, res: Response) => {
+
+        try {
+            const alllUsers = await Address.findAll()
+
+            if (!alllUsers) {
+                return res.status(StatusCodes.NOT_FOUND).json({ msg: `No Users at this time.` })
+            }
+
+            return res.status(StatusCodes.OK).json({ total_user: alllUsers.length, alllUsers })
+        } catch (error) {
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error })
+        }
+    }
+
+    static address = async (req: Request, res: Response) => {
+
+        try {
+            const { address, postcode } = req.body
+            if (!address || !postcode) {
                 return res.status(StatusCodes.BAD_REQUEST).json({ error: `Please provide all the required parameters...` })
             }
 
-            const user = await UserRepository.findByEmail(email)
-
-            if (!user) {
-                return res.status(StatusCodes.NOT_FOUND).json({ error: `No user exists with the email provided....` })
-            }
-            const comparePassword = await UserRepository.comparePassword(email, password)
-
-            if (!comparePassword) {
-                return res.status(StatusCodes.BAD_REQUEST).json({ error: `Incorrect password` })
-            }
-
-            return res.status(StatusCodes.OK).json({ user })
+            const newAddress = Address.create({ address: address, postcode: postcode });
+            return res.status(StatusCodes.CREATED).json({ newAddress })
         } catch (error) {
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error })
         }
-
     }
 
-    static update = async (req: Request, res: Response) => {
-        try {
-            const { username, email, password } = req.body
-
-            const getUser = await UserRepository.findOne(req.params.id)
-
-            if (!username || !email || !password) {
-                return res.status(401).json({ error: `Please provide all the required parameters` })
-            }
-
-            if (!getUser) {
-                return res.status(404).json({ error: `No User with id exists` })
-            }
-
-            const updateUser = await UserRepository.update((req.params.id), req.body)
-
-            return res.status(201).json({ updateUser })
-        } catch (error) {
-            console.log(error)
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error })
-        }
-    }
-
-    static delete = async (req: Request, res: Response) => {
-        try {
-            const id = (req.params.id)
-    
-            const user = await UserRepository.findOne(id)
-    
-            if (!user) {
-                return res.status(StatusCodes.NOT_FOUND).json({error: `User does not exists`})
-            }
-    
-            await UserRepository.remove(id)
-    
-            return res.status(StatusCodes.OK).json({msg: "user deleted"})
-    
-        }catch(error) {
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({error})
-        }
-    }
 }
 
 export default UserController;

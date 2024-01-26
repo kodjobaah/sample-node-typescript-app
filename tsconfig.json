@@ -4,10 +4,12 @@
         "module": "ESNext",
         "moduleResolution": "Node",
         "esModuleInterop": true,
-        "outDir": "dist",
-        "sourceRoot": "src/",
+        "outDir": "./dist",
         "sourceMap": true,
-        "baseUrl": "./src",
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "rootDir": "./src",
+        "noEmit": false, 
     },
     "ts-node": {
         "esm": true

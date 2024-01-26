@@ -1,4 +1,5 @@
-import { User, UnitUser, Users} from "./user.interface";
+import { UnitUser, Users} from "./user.interface";
+import {User} form "../models/User"
 import bycrypt from "bcryptjs"
 import {v4 as random} from "uuid"
 import fs from "fs";
@@ -53,16 +54,25 @@ export const findByEmail = async (user_email: string): Promise<null | UnitUser> 
     return getUser;
 }
 
-export const comparePassword = async (email: string, supplied_password: string): Promise<null | UnitUser> => {
+/**
+ * Compares the supplied password with the hashed password associated with the given email.
+ * @param email - The email of the user
+ * @param suppliedPassword - The password supplied for comparison
+ * @returns The user if the passwords match, otherwise null
+ */
+export const comparePassword = async (email: string, suppliedPassword: string): Promise<null | UnitUser> => {
 
-    const user = await findByEmail(email);
+    // Find user by email
+    const user = await User.findByEmail(email);
 
-    const decryptPassword = await bycrypt.compare(supplied_password, user!.password);
+    // Compare supplied password with hashed password
+    const isPasswordMatch = await bycrypt.compare(suppliedPassword, user!.password);
 
-    if (!decryptPassword) {
+    // If passwords do not match, return null
+    if (!isPasswordMatch) {
         return null;
     }
 
-    return user
-
+    // Return the user if passwords match
+    return user;
 }

@@ -39,7 +39,12 @@ class UserRepository {
     }
     
     static findAll = async (): Promise<UnitUser[]> => {
-        const users = await findAll();
+        let users
+        try {
+            users = await findAll();
+        } catch (error) {
+            console.log(error)
+        }
         return users;
     }
 
