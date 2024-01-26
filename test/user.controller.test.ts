@@ -4,9 +4,9 @@ import sinon from 'sinon'
 import chai, { expect } from 'chai'
 import sinonChai from 'sinon-chai'
 import { mockReq, mockRes } from 'sinon-express-mock'
-import { Model} from 'sequelize-typescript';
+import { Model, Repository} from 'sequelize-typescript';
 
-import {User}  from "../src/models/User.model";
+import {User}  from "../src/models/User";
 import UserController from "../src/user/user.controller";
 
 import proxyquire from 'proxyquire'

@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import request from 'supertest';
 import app from '../src/app';
 import { faker } from '@faker-js/faker';
-import { User } from '../src/models/User.model';
+import { User } from '../src/models/User';
 
 
 describe("App Test", () => {

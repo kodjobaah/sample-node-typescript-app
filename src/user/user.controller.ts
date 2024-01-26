@@ -1,10 +1,13 @@
 import { Request, Response } from "express"
-import { UnitUser } from "./user.interface"
 import { StatusCodes } from "http-status-codes"
 
-import { User, Address } from '../models/User.model'
-import UserRepository from "./user.repository"
+import { User } from '../models/User';
+import { Address } from '../models/Address';
+import sequelize from '../db';
 
+
+const userRepository = sequelize.getRepository(User);
+const addressRepository = sequelize.getRepository(Address);
 
 class UserController {
 
@@ -17,7 +20,7 @@ class UserController {
                 return res.status(StatusCodes.BAD_REQUEST).json({ error: `Please provide all the required parameters...` })
             }
 
-            const newUser = User.create({ username: username, email: email, userpassword: password });
+            const newUser = userRepository.create({ username: username, email: email, userpassword: password });
 
             return res.status(StatusCodes.CREATED).json({ newUser })
         } catch (error) {
@@ -36,7 +39,7 @@ class UserController {
     static findAll = async (req: Request, res: Response) => {
 
         try {
-            const alllUsers = await User.findAll({ attributes: ['id', 'username', 'email'] })
+            const alllUsers = await userRepository.findAll({include: [addressRepository]})
 
             if (!alllUsers) {
                 return res.status(StatusCodes.NOT_FOUND).json({ msg: `No Users at this time.` })
@@ -53,14 +56,10 @@ class UserController {
 
         try {
             const {email, postcode}  = req.body
-        
-
-            const address = await Address.findOne({ where: { postcode: postcode } })
-            const user = await User.findOne({ where: { email: email }, attributes: ['id', 'username', 'email'] })
-            address.familymembers.push(user);
-            user.address = address;
-            await user.save();
-            await address.save();
+    
+            const address = await addressRepository.findOne({ where: { postcode: postcode } })
+            const user = await userRepository.findAll({ where: { email: email }})
+            await userRepository.update({ addressId: address.id }, { where: { id: user[0].id } });
             return res.status(StatusCodes.OK).json({ msg: 'user updated' })
 
         } catch (error) {
@@ -71,7 +70,7 @@ class UserController {
     static findAllAddress = async (req: Request, res: Response) => {
 
         try {
-            const alllUsers = await Address.findAll()
+            const alllUsers = await addressRepository.findAll({include: [userRepository]})
 
             if (!alllUsers) {
                 return res.status(StatusCodes.NOT_FOUND).json({ msg: `No Users at this time.` })
@@ -91,7 +90,7 @@ class UserController {
                 return res.status(StatusCodes.BAD_REQUEST).json({ error: `Please provide all the required parameters...` })
             }
 
-            const newAddress = Address.create({ address: address, postcode: postcode });
+            const newAddress = addressRepository.create({ address: address, postcode: postcode });
             return res.status(StatusCodes.CREATED).json({ newAddress })
         } catch (error) {
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error })
